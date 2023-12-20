@@ -29,7 +29,10 @@ x86/
 bld/
 [Bb]in/
 [Oo]bj/
+<<<<<<< HEAD
 [Oo]ut/
+=======
+>>>>>>> a1a8f73f4cc6933f470f19f3ae3be38462607572
 [Ll]og/
 [Ll]ogs/
 
@@ -360,4 +363,8 @@ MigrationBackup/
 .ionide/
 
 # Fody - auto-generated XML schema
+<<<<<<< HEAD
 FodyWeavers.xsd
+=======
+FodyWeavers.xsd
+>>>>>>> a1a8f73f4cc6933f470f19f3ae3be38462607572
