@@ -28,7 +28,9 @@ Assigned_Game::Assigned_Game(const QHash<Info, int>& startInfo, QWidget *parent)
     ui.Thinking_img->setMovie(timg);
     timg->start();
 
-    threadpool = new QThreadPool();
+    threadpool = QThreadPool::globalInstance();
+    bestPos = QPair<int, LL>(-1, -INFINITY);
+    countThread = Threadnum;
 
     set_First_Three();//指定前三步的位置
 }
@@ -211,7 +213,7 @@ void Assigned_Game::exchange_In_Three()
        else if(ans==QMessageBox::No)//如果拒绝 则player仍然为黑棋 ai为白棋 此时轮到ai下一步
        {
            Chess_Util::Gamerec[NowTurn] = AI;
-           AITurn();//轮到AI白 选择一个位置
+           AITurn();//轮到AI白 落子
        }
     }
     else if (Chess_Util::Gamerec[NowTurn] == AI)//如果是ai先手 那么ai为黑 player为白 此时绝对会被拒绝 拒绝后player下一步棋
@@ -225,7 +227,6 @@ void Assigned_Game::exchange_In_Three()
 void Assigned_Game::FifthN()
 {
     ui.Thinking_img->move(510, 0);
-    qDebug() << Fifth;
     std::swap(Chess_Util::Gamerec[Playerchess], Chess_Util::Gamerec[AIchess]);
     Chess_Util::Gamerec[NowTurn] = AI;
     Assigned_Thread* aithread = new Assigned_Thread(1, Fifth);
@@ -233,10 +234,10 @@ void Assigned_Game::FifthN()
     connect(aithread, &Assigned_Thread::Drop, this, &Assigned_Game::exclude);
 }
 
-void Assigned_Game::exclude(QString res)
+void Assigned_Game::exclude(QPair<int,LL> res)
 {
-    qDebug() << res;
-    Fifth.remove(Fifth.indexOf(res.toInt()));
+    Fifth.remove(Fifth.indexOf(res.first));
+    Chess_Util::Board[res.first / 100][res.first % 100] = BLANK;
     CountFifthN--;
     if (CountFifthN == 1)
     {
@@ -263,38 +264,10 @@ void Assigned_Game::mousePressEvent(QMouseEvent * event)
     if (getx < 90 || getx>510 || gety < 90 || gety>510) return;
     getx = (getx - 90) / 30 + ((getx - 90) % 30 > 15 ? 1 : 0);
     gety = (gety - 90) / 30 + ((gety - 90) % 30 > 15 ? 1 : 0);
-    if (Chess_Util::Board[getx + 1][gety + 1] != BLANK)
-    {
-        if (isSimulate == true && Chess_Util::Board[getx + 1][gety + 1] == Red);//此时是为了让player选则ai选的n个位置中的一个
-        else return;
-    }
+    if ((Chess_Util::Board[getx + 1][gety + 1] != BLANK && isSimulate == false) || (Chess_Util::Board[getx + 1][gety + 1] != Red && isSimulate == true)) return;
     
     Chess_Util::Gamerec[X] = getx+1; Chess_Util::Gamerec[Y] = gety+1;
 
-    //if (Chess_Util::Gamerec[CountTotal] == 4 && CountFifthN < Chess_Util::StartInfo[FiveN] && Chess_Util::Gamerec[NowTurn] == Player)//如果五手n打时时player
-    //{
-    //    Chess_Util::Board[Chess_Util::Gamerec[X]][Chess_Util::Gamerec[Y]] = Red;
-    //    repaint();
-    //    Fifth.append(Chess_Util::Gamerec[X] * 100 + Chess_Util::Gamerec[Y]);
-    //    CountFifthN++;
-    //    if (CountFifthN == Chess_Util::StartInfo[FiveN])
-    //    {
-    //        for(int i=0;i<Fifth.size();i++)  Chess_Util::Board[Fifth[i]/100][Fifth[i]%100]= BLANK;
-    //        FifthN();
-    //    }
-    //}
-    //else if (Chess_Util::Gamerec[CountTotal] == 4 && CountFifthN == Chess_Util::StartInfo[FiveN])
-    //{
-    //    if (!Fifth.contains(Chess_Util::Gamerec[X] * 100 + Chess_Util::Gamerec[Y])) return;
-    //    for (int i = 0; i < Fifth.size(); i++)  Chess_Util::Board[Fifth[i] / 100][Fifth[i] % 100] = BLANK;
-    //    Chess_Util::Board[Chess_Util::Gamerec[X]][Chess_Util::Gamerec[Y]] = BLACK;
-    //    Chess_Util::Gamerec[CountAI]++;
-    //    Chess_Util::Gamerec[CountTotal]++;
-    //    Chess_Util::Gamerec[NowTurn] = Player;
-    //    ui.Thinking_img->move(0, 0);
-    //    repaint();
-    //}
-    //else 
     playerTurn();
 }
 
@@ -384,17 +357,60 @@ void Assigned_Game::playerTurn()
 void Assigned_Game::AITurn()
 {
     ui.Thinking_img->move(510, 0);
-    Assigned_Thread* aithread = new Assigned_Thread();
-    connect(aithread, &Assigned_Thread::Drop, this, &Assigned_Game::receiveRes);
-    threadpool->start(aithread);
+    QList<int> poss = getAvailablePos(Chess_Util::Gamerec[X], Chess_Util::Gamerec[Y],AI);
+    int subnum = qCeil((float)poss.size() / Threadnum);
+    countThread = Threadnum;
+    qDebug() << countThread;
+    for (int i=0;i<=poss.size();i+=subnum)
+    {
+       QList<int> subposs;
+        if(i+subnum<=poss.size()) 
+        {
+            subposs = poss.mid(i, subnum);
+            qDebug() << "a thread";
+        }
+        else  if(poss.size() - i>0)
+        {
+            subposs = poss.mid(i, poss.size() - i);
+            qDebug() << "a thread";
+        }
+        try
+        {
+            Assigned_Thread* aithread = new Assigned_Thread(1, subposs);
+            connect(aithread, &Assigned_Thread::Drop, this, &Assigned_Game::receiveRes);
+            threadpool->start(aithread);
+        }
+        catch (const std::exception&)
+        {
+            qDebug() << "wrong";
+        }
+        
+    }
+    
 }
 
-void Assigned_Game::receiveRes(QString res)
+void Assigned_Game::receiveRes(QPair<int, LL> res)
 {
-    int x = res.toInt();//得到了一个结果
+    int x = res.first;//得到了一个结果
+    
+    if (res.second >= bestPos.second)
+    {
+        mutex.lock();
+        bestPos = res;
+        mutex.unlock();
+    }
+    
+    if (threadpool->activeThreadCount() != 0)
+    {
+       return;
+    }
+    else if (threadpool->activeThreadCount() == 0)
+    {
+        qDebug() << "here here";
+        x = res.first;
+    }
     if (isSimulate==true)//此时ai在选择n个对自己最有利的位置
     {
-        
         Fifth.append(x);
         Chess_Util::Board[x/100][x%100] = Red;
         repaint();
@@ -417,4 +433,5 @@ void Assigned_Game::receiveRes(QString res)
     Chess_Util::Gamerec[NowTurn] = Player;
     repaint();
     ui.Thinking_img->move(0, 0);
+    
 }

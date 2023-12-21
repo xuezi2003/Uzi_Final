@@ -294,11 +294,6 @@ int Chess_Util::checkWin(int now,int mode)//判断获胜 己方获胜条件：己方五连 对方
 	int res=0;
 	if (mode == 0)
 	{
-		//if(now==Player && Gamerec[Playerchess]==BLACK && checkForbidden(Gamerec[Playerchess])) res=2;
-		/*if (now == Player && Gamerec[Playerchess] == WHITE && checkForbidden(Gamerec[Playerchess], x, y)) res = 1;
-		if (now == AI && Gamerec[Playerchess] == BLACK && checkForbidden(Gamerec[Playerchess], x, y)) res = 2;
-		if (now == AI && Gamerec[Playerchess] == WHITE && checkForbidden(Gamerec[Playerchess], x, y)) res = 1;*/
-
 		if (Gamerec[Playerchess] == BLACK && chessTypeCount[BlackFive] > 0 && now == Player) res=1;
 		if (Gamerec[AIchess] == BLACK && chessTypeCount[BlackFive] > 0 && now == AI) res=2;
 
@@ -351,6 +346,173 @@ int Chess_Util::checkSix(int chess)//1 触犯 0 未触犯
 {
 	if (chess == BLACK) return chessTypeCount[BlackSix]>0;
 	else return chessTypeCount[WhiteSix] > 0;
+}
+
+
+
+void Chess_Util::updateRec(const int board[17][17], QHash<GameRecord, int> *rec, QHash<GameRecord, int> *Count, QHash<GameRecord, int> *Count_Old)
+{
+	(*Count_Old) = (*Count);//每次更新保存旧值
+	(*Count).clear();
+	LL temp = 0;
+	//检查行 注意范围
+	for (int i = 0; i < 17; i++)
+	{
+		temp = 0;
+		for (int j = 0; j < 17; j++)
+		{
+			if (i <= 12 && i >= 4 && j >= 4 && j <= 12 && Board[i][j] == (*rec)[AIchess]) (*rec)[CountAICentral]++;
+			if (i <= 12 && i >= 4 && j >= 4 && j <= 12 && Board[i][j] == (*rec)[Playerchess]) (*rec)[CountPlayerCentral]++;
+			temp *= 10;//一条包含边界的线
+			temp += board[i][j];
+
+		}
+
+		for (int k = 0; temp / 100000 > 0; k++)
+		{
+			int t1 = temp % 1000000;
+			int t2 = temp % 10000000;
+			if (chessTypeInfo.contains(t1))
+			{
+				(*Count)[chessTypeInfo[t1].first]++;//如果有这种棋形 则对应计数++
+			}
+			if (chessTypeInfo.contains(t2) && t2 / 1000000 > 0)
+			{
+				(*Count)[chessTypeInfo[t2].first]++;
+			}
+			temp /= 10;
+		}
+	}
+	//检查列
+	for (int i = 0; i < 17; i++)
+	{
+		temp = 0;
+		for (int j = 0; j < 17; j++)
+		{
+			if (i <= 12 && i >= 4 && j >= 4 && j <= 12 && Board[j][i] == (*rec)[AIchess]) (*rec)[CountAICentral]++;
+			if (i <= 12 && i >= 4 && j >= 4 && j <= 12 && Board[j][i] == (*rec)[Playerchess]) (*rec)[CountPlayerCentral]++;
+			temp *= 10;
+			temp += board[j][i];
+		}
+		for (int k = 0; temp / 100000 > 0; k++)
+		{
+			int t1 = temp % 1000000;
+			int t2 = temp % 10000000;
+			if (chessTypeInfo.contains(t1))
+			{
+				(*Count)[chessTypeInfo[t1].first]++;//如果有这种棋形 则对应计数++
+			}
+			if (chessTypeInfo.contains(t2) && t2 / 1000000 > 0)
+			{
+				(*Count)[chessTypeInfo[t2].first]++;
+			}
+			temp /= 10;
+		}
+	}
+	//检查对角线 /
+	for (int i = 0; i <= 32; i++)
+	{
+		temp = 0;
+		for (int j = i; j >= 0; j--)
+		{
+			if (j <= 12 && j >= 4 && -j + i >= 4 && -j + i <= 12 && Board[j][-j + i] == (*rec)[AIchess]) (*rec)[CountAICentral]++;
+			if (j <= 12 && j >= 4 && -j + i >= 4 && -j + i <= 12 && Board[j][-j + i] == (*rec)[Playerchess]) (*rec)[CountPlayerCentral]++;
+			if (j <= 16 && j >= 0 && -j + i >= 0 && -j + i <= 16)
+			{
+				temp *= 10;
+				temp += board[j][-j + i];
+			}
+		}
+		for (; temp / 1000000 > 0;)
+		{
+			int t1 = temp % 1000000;
+			int t2 = temp % 10000000;
+			if (chessTypeInfo.contains(t1)) (*Count)[chessTypeInfo[t1].first]++;//如果有这种棋形 则对应计数++
+			if (chessTypeInfo.contains(t2) && t2 / 1000000 > 0) (*Count)[chessTypeInfo[t2].first]++;
+			temp /= 10;
+		}
+	}
+	//检查对角线
+	for (int i = 16; i >= -16; i--)
+	{
+		temp = 0;
+		for (int j = 0; j + i <= 14; j++)
+		{
+			if (j <= 12 && j >= 4 && j + i >= 4 && j + i <= 12 && Board[j][j + i] == (*rec)[AIchess]) (*rec)[CountAICentral]++;
+			if (j <= 12 && j >= 4 && j + i >= 4 && j + i <= 12 && Board[j][j + i] == (*rec)[Playerchess]) (*rec)[CountPlayerCentral]++;
+			if (j <= 16 && j >= 0 && j + i >= 0 && j + i <= 16)
+			{
+				temp *= 10;
+				temp += board[j][j + i];
+			}
+		}
+		for (; temp / 1000000 > 0;)
+		{
+			int t1 = temp % 1000000;
+			int t2 = temp % 10000000;
+			if (chessTypeInfo.contains(t1)) (*Count)[chessTypeInfo[t1].first]++;//如果有这种棋形 则对应计数++
+			if (chessTypeInfo.contains(t2) && t2 / 1000000 > 0) (*Count)[chessTypeInfo[t2].first]++;
+			temp /= 10;
+		}
+	}
+}
+
+int Chess_Util::checkWin(int now, const int board[17][17], QHash<GameRecord, int> *rec, QHash<GameRecord, int> *Count, int mode)
+{
+	int res = 0;
+	if (mode == 0)
+	{
+		if ((*rec)[Playerchess] == BLACK && (*Count)[BlackFive] > 0 && now == Player) res = 1;
+		if ((*rec)[AIchess] == BLACK && (*Count)[BlackFive] > 0 && now == AI) res = 2;
+
+		if ((*rec)[Playerchess] == BLACK && (*Count)[WhiteFive] > 0 && now == Player) res = 2;
+		if ((*rec)[AIchess] == BLACK && (*Count)[WhiteFive] > 0 && now == AI) res = 1;
+
+		if ((*rec)[Playerchess] == WHITE && (*Count)[WhiteFive] > 0 && now == Player) res = 1;
+		if ((*rec)[AIchess] == WHITE && (*Count)[WhiteFive] > 0 && now == AI) res = 2;
+		if ((*rec)[AIchess] == WHITE && (*Count)[BlackFive] > 0 && now == AI) res = 1;
+		if ((*rec)[Playerchess] == WHITE && (*Count)[BlackFive] > 0 && now == Player) res = 2;
+	}
+
+	return res;
+}
+
+int Chess_Util::checkForbidden(int chess, QHash<GameRecord, int> *Count, QHash<GameRecord, int> *Count_Old, int mode)
+{
+	if (checkDoubleFour(chess,Count, Count_Old) ||
+		checkDoubleThree(chess, Count, Count_Old) ||
+		checkSix(chess, Count, Count_Old))
+	{
+		return 1;
+	}//判断新值是否触犯禁手
+	return 0;
+}
+
+int Chess_Util::checkDoubleFour(int chess, QHash<GameRecord, int> *Count, QHash<GameRecord, int> *Count_Old)
+{
+	if (chess == BLACK && (*Count)[BlackHFour] + (*Count)[BlackCFour] - ((*Count_Old)[BlackHFour] +(*Count_Old)[BlackCFour]) >= 2) { return 1; };
+	if (chess == WHITE && (*Count)[WhiteHFour] + (*Count)[WhiteCFour] - ((*Count_Old)[WhiteHFour] +(*Count_Old)[WhiteCFour]) >= 2) { return 1; };
+	return 0;
+}
+
+int Chess_Util::checkDoubleThree(int chess, QHash<GameRecord, int> *Count, QHash<GameRecord, int> *Count_Old)
+{
+	if (chess == BLACK && (*Count)[BlackHThree] - (*Count_Old)[BlackHThree] >= 2) { return 1; };
+	if (chess == WHITE && (*Count)[WhiteHThree] - (*Count_Old)[WhiteHThree] >= 2) { return 1; };
+	return 0;
+}
+
+int Chess_Util::checkFourThree(int chess, QHash<GameRecord, int> *Count, QHash<GameRecord, int> *Count_Old)
+{
+	if (chess == BLACK && (*Count)[BlackCFour] + (*Count)[BlackHFour] - ((*Count_Old)[BlackCFour] + (*Count_Old)[BlackHFour]) >= 1 && (*Count)[BlackHThree] - (*Count_Old)[BlackHThree] >= 1) { return 1; };
+	if (chess == WHITE && (*Count)[WhiteCFour] + (*Count)[WhiteHFour] - ((*Count_Old)[WhiteCFour] + (*Count_Old)[WhiteHFour]) >= 1 && (*Count)[WhiteHThree] - (*Count_Old)[WhiteHThree] >= 1) { return 1; };
+	return 0;
+}
+
+int Chess_Util::checkSix(int chess, QHash<GameRecord, int> *Count, QHash<GameRecord, int> *Count_Old)
+{
+	if (chess == BLACK) return (*Count)[BlackSix] > 0;
+	else return (*Count)[WhiteSix] > 0;
 }
 
 void Chess_Util::showInfo()
