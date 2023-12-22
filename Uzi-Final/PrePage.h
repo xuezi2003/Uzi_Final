@@ -23,4 +23,5 @@ private:
 private slots:
     void startGame();
     void resetInfo();
+    void isFree(bool ischecked);
 };

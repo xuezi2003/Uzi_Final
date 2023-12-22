@@ -9,29 +9,22 @@
 #include <qhash.h>
 #include "Assigned_Thread.h"
 #include "qmutex.h"
-class Assigned_Game : public Game
+class Free_Game : public Game
 {
 	Q_OBJECT
 
 public:
-	Assigned_Game(const QHash<Info, int>& startInfo, QWidget *parent = nullptr);
-	Assigned_Game() {}
-	~Assigned_Game();
+	Free_Game(const QHash<Info, int>& startInfo, QWidget* parent = nullptr);
+	Free_Game() {}
+	~Free_Game();
 
 private:
 	QThreadPool* threadpool;
 	Ui::Assigned_GameClass ui;
-	int CountFifthN = 0;
-	int countThread;
 	QPair<int, LL> bestPos;
-	bool isSimulate=false;
 	void dealwithWin(int winner);
-	void set_First_Three();
-	void exchange_In_Three();
-	void FifthN();
 	const int Threadnum = 5;
 	QMutex mutex;
-	QList<int> Fifth;
 	// Í¨¹ý Game ¼Ì³Ð
 	virtual void mousePressEvent(QMouseEvent* event) override;
 	virtual void paintEvent(QPaintEvent* event) override;
@@ -40,7 +33,6 @@ private:
 private slots:
 	void Regret();
 	void Pass();
-    void receiveRes(QPair<int,LL> res);
-	void exclude(QPair<int, LL> res);
+	void receiveRes(QPair<int, LL> res);
 	void showLabel();
 };

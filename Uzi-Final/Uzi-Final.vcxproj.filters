@@ -52,6 +52,9 @@
     <ClCompile Include="Chess_Util.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="Free_Game.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <QtMoc Include="Game.h">
@@ -66,12 +69,18 @@
     <QtMoc Include="Chess_Util.h">
       <Filter>Header Files</Filter>
     </QtMoc>
+    <QtMoc Include="Free_Game.h">
+      <Filter>Header Files</Filter>
+    </QtMoc>
   </ItemGroup>
   <ItemGroup>
     <QtUic Include="Game.ui">
       <Filter>Form Files</Filter>
     </QtUic>
     <QtUic Include="Assigned_Game.ui">
+      <Filter>Form Files</Filter>
+    </QtUic>
+    <QtUic Include="Free_Game.ui">
       <Filter>Form Files</Filter>
     </QtUic>
   </ItemGroup>

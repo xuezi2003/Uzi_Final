@@ -91,12 +91,14 @@
   <ItemGroup>
     <QtRcc Include="PrePage.qrc" />
     <QtUic Include="Assigned_Game.ui" />
+    <QtUic Include="Free_Game.ui" />
     <QtUic Include="Game.ui" />
     <QtUic Include="PrePage.ui" />
     <QtMoc Include="PrePage.h" />
     <ClCompile Include="Assigned_Game.cpp" />
     <ClCompile Include="Assigned_Thread.cpp" />
     <ClCompile Include="Chess_Util.cpp" />
+    <ClCompile Include="Free_Game.cpp" />
     <ClCompile Include="Game.cpp" />
     <ClCompile Include="PrePage.cpp" />
     <ClCompile Include="main.cpp" />
@@ -112,6 +114,9 @@
   </ItemGroup>
   <ItemGroup>
     <QtMoc Include="Chess_Util.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <QtMoc Include="Free_Game.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Condition="Exists('$(QtMsBuild)\qt.targets')">

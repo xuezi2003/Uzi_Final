@@ -43,6 +43,7 @@ QList<int> Game::getAvailablePos(int x, int y, int now)//这是每一次模拟下的位置 
 void Game::range(int& U, int& D, int& L, int& R, int x, int y, int now)
 {
 	int r = 2;
+	if (Chess_Util::Gamerec[CountTotal] < 8) r = 1;
 	while (true)
 	{
 		int count = 0;

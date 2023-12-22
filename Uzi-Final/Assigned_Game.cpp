@@ -27,16 +27,31 @@ Assigned_Game::Assigned_Game(const QHash<Info, int>& startInfo, QWidget *parent)
     QMovie* timg = new QMovie(":/new/game/Resource/thinking.gif");
     ui.Thinking_img->setMovie(timg);
     timg->start();
-
+    ui.Regret_Btn->setEnabled(false);
     threadpool = QThreadPool::globalInstance();
-    bestPos = QPair<int, LL>(-1, -INFINITY);
+    showLabel();
+    bestPos = QPair<int, LL>(-1, -10*INFINITY);
     countThread = Threadnum;
-
+    connect(ui.Regret_Btn, &QPushButton::clicked, this, &Assigned_Game::Regret);
+    connect(ui.Pass_Btn, &QPushButton::clicked, this, &Assigned_Game::Regret);
     set_First_Three();//指定前三步的位置
 }
 
 Assigned_Game::~Assigned_Game()
 {}
+void Assigned_Game::Regret()
+{
+    int r1=Chess_Util::Track.takeLast();
+    int r2 = Chess_Util::Track.takeLast();
+    Chess_Util::Board[r1 / 100][r1 % 100] = BLANK;
+    Chess_Util::Board[r2 / 100][r2 % 100] = BLANK;
+    Chess_Util::Gamerec[CountAI]--;
+    Chess_Util::Gamerec[CountPlayer]--;
+    Chess_Util::Gamerec[CountTotal]--;
+    Chess_Util::updateRec();
+    repaint();
+    showLabel();
+}
 
 void Assigned_Game::dealwithWin(int winner)
 {
@@ -195,6 +210,7 @@ void Assigned_Game::set_First_Three()
     Chess_Util::Gamerec[CountTotal] += 3;
 
     repaint();
+    showLabel();
     exchange_In_Three();//到达三首交换
 }
 
@@ -213,6 +229,7 @@ void Assigned_Game::exchange_In_Three()
        else if(ans==QMessageBox::No)//如果拒绝 则player仍然为黑棋 ai为白棋 此时轮到ai下一步
        {
            Chess_Util::Gamerec[NowTurn] = AI;
+           showLabel();
            AITurn();//轮到AI白 落子
        }
     }
@@ -246,6 +263,7 @@ void Assigned_Game::exclude(QPair<int,LL> res)
         Chess_Util::Gamerec[CountPlayer]++;
         Chess_Util::Gamerec[CountTotal]++;
         repaint();
+        showLabel();
         AITurn();
         return;
     }
@@ -310,6 +328,7 @@ void Assigned_Game::playerTurn()
         Chess_Util::Board[Chess_Util::Gamerec[X]][Chess_Util::Gamerec[Y]] = Red;
         Fifth.append(Chess_Util::Gamerec[X]*100 + Chess_Util::Gamerec[Y]);
         repaint();
+        showLabel();
         CountFifthN++;//此时让player选n个位置 选了一个 ai位置已经选择完毕
         if (CountFifthN == Chess_Util::StartInfo[FiveN]) FifthN();
         return;
@@ -323,21 +342,26 @@ void Assigned_Game::playerTurn()
         Chess_Util::Gamerec[NowTurn] = Player;
         isSimulate = false;//player帮ai选择完毕 继续player的下棋
         repaint();
+        showLabel();
         return;
     }
 
+    if (CountTotal >= 7) ui.Regret_Btn->setEnabled(true);
+    else ui.Regret_Btn->setEnabled(false);
+
     ui.Thinking_img->move(0, 0);
     Chess_Util::Board[Chess_Util::Gamerec[X]][Chess_Util::Gamerec[Y]] = Chess_Util::Gamerec[Playerchess];
+    Chess_Util::Track.append(Chess_Util::Gamerec[X] * 100 + Chess_Util::Gamerec[Y]);
     repaint();
-
+    showLabel();
     Chess_Util::updateRec();//此时player落子后更新 并且保存原有的rec
-    int res = Chess_Util::checkForbidden(Chess_Util::Gamerec[Playerchess], 1);//依据原来的和现在的比较
+    Chess_Util::showInfo();
+    int res = 0;
+    if(Chess_Util::Gamerec[Playerchess] == BLACK) res=Chess_Util::checkForbidden(Chess_Util::Gamerec[Playerchess], 1);//依据原来的和现在的比较
+    if(res==1) dealwithWin(2);
     if(res==0|| Chess_Util::Gamerec[Playerchess]==WHITE) res=Chess_Util::checkWin(Player);//先判断禁手 没有触犯禁手再判断 如果是白棋触犯禁手也无妨
-
     dealwithWin(res);
-
-    //Chess_Util::showInfo();
-
+   
     Chess_Util::Gamerec[CountPlayer]++;
     Chess_Util::Gamerec[CountTotal]++;
     Chess_Util::Gamerec[NowTurn] = AI;
@@ -356,23 +380,25 @@ void Assigned_Game::playerTurn()
 
 void Assigned_Game::AITurn()
 {
+    ui.Regret_Btn->setEnabled(false);
     ui.Thinking_img->move(510, 0);
     QList<int> poss = getAvailablePos(Chess_Util::Gamerec[X], Chess_Util::Gamerec[Y],AI);
+    std::sort(poss.begin(), poss.end(), [&](const int& p1, const int& p2) {
+        double x1 = sqrt((double)pow(Chess_Util::Gamerec[X] - p1 / 100, 2) + pow(Chess_Util::Gamerec[Y] - p1 % 100, 2));
+        double x2 = sqrt((double)pow(Chess_Util::Gamerec[X] - p2 / 100, 2) + pow(Chess_Util::Gamerec[Y] - p2 % 100, 2));
+        return x1 < x2;
+        });//对所选位置进行排序 排序依据时距离上一步棋子的距离 或者是第一步？
     int subnum = qCeil((float)poss.size() / Threadnum);
-    countThread = Threadnum;
-    qDebug() << countThread;
     for (int i=0;i<=poss.size();i+=subnum)
     {
        QList<int> subposs;
         if(i+subnum<=poss.size()) 
         {
             subposs = poss.mid(i, subnum);
-            qDebug() << "a thread";
         }
         else  if(poss.size() - i>0)
         {
             subposs = poss.mid(i, poss.size() - i);
-            qDebug() << "a thread";
         }
         try
         {
@@ -391,36 +417,36 @@ void Assigned_Game::AITurn()
 
 void Assigned_Game::receiveRes(QPair<int, LL> res)
 {
-    int x = res.first;//得到了一个结果
-    
+    int x = res.first;
+    mutex.lock();
+    if (threadpool->activeThreadCount() == Threadnum-1) { bestPos =res; }//得到了一个结果
     if (res.second >= bestPos.second)
     {
-        mutex.lock();
         bestPos = res;
-        mutex.unlock();
     }
-    
+    mutex.unlock();
     if (threadpool->activeThreadCount() != 0)
     {
        return;
     }
     else if (threadpool->activeThreadCount() == 0)
     {
-        qDebug() << "here here";
-        x = res.first;
+        x = bestPos.first;
     }
     if (isSimulate==true)//此时ai在选择n个对自己最有利的位置
     {
         Fifth.append(x);
         Chess_Util::Board[x/100][x%100] = Red;
         repaint();
-
+        showLabel();
         CountFifthN++;
         //如果选完了 现在轮到player选择其中的一个
         if (CountFifthN == Chess_Util::StartInfo[FiveN])
         {
             ui.Thinking_img->move(0, 0);
             repaint();
+            showLabel();
+            showLabel();
             return;
         }
         //还没有选完 则继续执行
@@ -428,10 +454,23 @@ void Assigned_Game::receiveRes(QPair<int, LL> res)
         return;
     }
     Chess_Util::Board[x / 100][x % 100] = Chess_Util::Gamerec[AIchess];
+    Chess_Util::Track.append(x);
     Chess_Util::Gamerec[CountAI]++;
     Chess_Util::Gamerec[CountTotal]++;
     Chess_Util::Gamerec[NowTurn] = Player;
+    showLabel();
     repaint();
     ui.Thinking_img->move(0, 0);
     
+}
+
+void Assigned_Game::showLabel()
+{
+    ui.Info_label->setText(QString("<-- Player chess:%1   AI chess:%2 -->\nNow:%3\nCountTatol:%4").arg(Chess_Util::Gamerec[Playerchess] == BLACK ? "BLACK" : "WHITE").arg(Chess_Util::Gamerec[AIchess] == BLACK ? "BLACK" : "WHITE").arg(Chess_Util::Gamerec[NowTurn] == Player ? "Player" : "AI").arg(Chess_Util::Gamerec[CountTotal]));
+}
+
+void Assigned_Game::Pass()
+{
+    if (Chess_Util::Gamerec[NowTurn] == Player) return;
+    if (Chess_Util::Gamerec[NowTurn] == Player) AITurn();
 }

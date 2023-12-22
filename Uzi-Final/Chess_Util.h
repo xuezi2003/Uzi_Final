@@ -74,6 +74,7 @@ public:
 	static int checkDoubleThree(int chess);
 	static int checkFourThree(int chess);
 	static int checkSix(int chess);
+	static QList<int> Track;
 	//thread专用重载版本
 	static void updateRec(const int board[17][17], QHash<GameRecord, int> *rec, QHash<GameRecord, int> *Count, QHash<GameRecord, int> *Count_Old);
 	static int checkWin(int now, const int board[17][17], QHash<GameRecord, int> *rec, QHash<GameRecord, int> *Count, int mode = 0);

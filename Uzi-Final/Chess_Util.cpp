@@ -7,6 +7,7 @@ QHash<Info, int> Chess_Util::StartInfo;
 QHash<GameRecord, int> Chess_Util::Gamerec;
 QHash<GameRecord, int> Chess_Util::chessTypeCount;
 QHash<GameRecord, int> Chess_Util::chessTypeCount_Old;
+QList<int> Chess_Util::Track;
 int Chess_Util::Board[17][17];
 Chess_Util::Chess_Util(QObject *parent)
 	: QObject(parent)
@@ -329,7 +330,6 @@ int Chess_Util::checkDoubleFour(int chess)//1 一步下出两个活四 0 没有
 
 int Chess_Util::checkDoubleThree(int chess)//1 一步下出两个活三 0 没有
 {
-	
 	if (chess == BLACK && chessTypeCount[BlackHThree]-chessTypeCount_Old[BlackHThree]>= 2) {  return 1; };
 	if (chess == WHITE && chessTypeCount[WhiteHThree]-chessTypeCount_Old[WhiteHThree] >= 2) {   return 1; };
 	return 0;
@@ -361,8 +361,8 @@ void Chess_Util::updateRec(const int board[17][17], QHash<GameRecord, int> *rec,
 		temp = 0;
 		for (int j = 0; j < 17; j++)
 		{
-			if (i <= 12 && i >= 4 && j >= 4 && j <= 12 && Board[i][j] == (*rec)[AIchess]) (*rec)[CountAICentral]++;
-			if (i <= 12 && i >= 4 && j >= 4 && j <= 12 && Board[i][j] == (*rec)[Playerchess]) (*rec)[CountPlayerCentral]++;
+			if (i <= 12 && i >= 4 && j >= 4 && j <= 12 && board[i][j] == (*rec)[AIchess]) (*rec)[CountAICentral]++;
+			if (i <= 12 && i >= 4 && j >= 4 && j <= 12 && board[i][j] == (*rec)[Playerchess]) (*rec)[CountPlayerCentral]++;
 			temp *= 10;//一条包含边界的线
 			temp += board[i][j];
 
@@ -389,8 +389,8 @@ void Chess_Util::updateRec(const int board[17][17], QHash<GameRecord, int> *rec,
 		temp = 0;
 		for (int j = 0; j < 17; j++)
 		{
-			if (i <= 12 && i >= 4 && j >= 4 && j <= 12 && Board[j][i] == (*rec)[AIchess]) (*rec)[CountAICentral]++;
-			if (i <= 12 && i >= 4 && j >= 4 && j <= 12 && Board[j][i] == (*rec)[Playerchess]) (*rec)[CountPlayerCentral]++;
+			if (i <= 12 && i >= 4 && j >= 4 && j <= 12 && board[j][i] == (*rec)[AIchess]) (*rec)[CountAICentral]++;
+			if (i <= 12 && i >= 4 && j >= 4 && j <= 12 && board[j][i] == (*rec)[Playerchess]) (*rec)[CountPlayerCentral]++;
 			temp *= 10;
 			temp += board[j][i];
 		}
@@ -415,8 +415,8 @@ void Chess_Util::updateRec(const int board[17][17], QHash<GameRecord, int> *rec,
 		temp = 0;
 		for (int j = i; j >= 0; j--)
 		{
-			if (j <= 12 && j >= 4 && -j + i >= 4 && -j + i <= 12 && Board[j][-j + i] == (*rec)[AIchess]) (*rec)[CountAICentral]++;
-			if (j <= 12 && j >= 4 && -j + i >= 4 && -j + i <= 12 && Board[j][-j + i] == (*rec)[Playerchess]) (*rec)[CountPlayerCentral]++;
+			if (j <= 12 && j >= 4 && -j + i >= 4 && -j + i <= 12 && board[j][-j + i] == (*rec)[AIchess]) (*rec)[CountAICentral]++;
+			if (j <= 12 && j >= 4 && -j + i >= 4 && -j + i <= 12 && board[j][-j + i] == (*rec)[Playerchess]) (*rec)[CountPlayerCentral]++;
 			if (j <= 16 && j >= 0 && -j + i >= 0 && -j + i <= 16)
 			{
 				temp *= 10;
@@ -473,7 +473,6 @@ int Chess_Util::checkWin(int now, const int board[17][17], QHash<GameRecord, int
 		if ((*rec)[AIchess] == WHITE && (*Count)[BlackFive] > 0 && now == AI) res = 1;
 		if ((*rec)[Playerchess] == WHITE && (*Count)[BlackFive] > 0 && now == Player) res = 2;
 	}
-
 	return res;
 }
 

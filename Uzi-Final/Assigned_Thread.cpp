@@ -41,12 +41,10 @@ void Assigned_Thread::run()
 {
 	int drop=-1;
 	system("cls");
-	//qDebug() << "*********************************************************0"<<QThread::currentThreadId();
 	LL res=minMaxSearch(INT_MIN, INT_MAX, drop, 1, Chess_Util::Gamerec[X] * 100 + Chess_Util::Gamerec[Y]);
+	qDebug() <<drop<< res;
 	QPair<int, LL> ans(drop, res);
-	//qDebug() << "*********************************************************1";
 	emit Drop(ans);
-	//qDebug() << "*********************************************************2" << QThread::currentThreadId();
 }
 //初始step为1 单数AI 双数Player
 LL Assigned_Thread::minMaxSearch(int a,int b,int &x,int step,int drop)//参数分别为α，β范围 最终落子位置 当前层数 上一层下的位置
@@ -54,14 +52,22 @@ LL Assigned_Thread::minMaxSearch(int a,int b,int &x,int step,int drop)//参数分别
 	//结束的条件：超过指定深度 玩家触犯禁手 某一方获胜 棋盘下满
 	//结束时返回当前棋面估值
 	int bestValue = (step % 2 == 1 ? INT_MIN : INT_MAX);
+
 	QList<int> Positions;
 	int res=0;
 	if(step>1)
 	{
 		//step==1 选择ai可能下的位置 之后便是检测上一层的结果 如step==3 此时检测上一层player
 		if (step % 2 == 1 && (*GamerecOfThread)[Playerchess] == BLACK) res = Chess_Util::checkForbidden((*GamerecOfThread)[Playerchess], chessTypeCountOfThread, chessTypeCount_OldOfThread, 1);
-		if ((step % 2 == 1 && res == 0)||(step%2==0)) res = Chess_Util::checkWin(step % 2 == 1 ? Player : AI, boardOfThread, GamerecOfThread, chessTypeCountOfThread);
-		if (step > 5 || res) return eval(res, step % 2 == 1 ? Player : AI);
+		if(step % 2 == 1 && (*GamerecOfThread)[Playerchess] == BLACK&&res==1) 
+		{
+			return eval(2, Player);
+		}
+		if ((step % 2 == 1 && res == 0)||(step%2==0)) res = Chess_Util::checkWin(step % 2 == 1 ? Player:AI, boardOfThread, GamerecOfThread, chessTypeCountOfThread);
+		if (step > 7 || res) 
+		{
+			return eval(res, step % 2 == 1 ? Player : AI);
+		}
 	}
 		
 	if (mode == 1 && step == 1) 
@@ -83,8 +89,8 @@ LL Assigned_Thread::minMaxSearch(int a,int b,int &x,int step,int drop)//参数分别
 		int pos = Positions[i];
 		
 		boardOfThread[pos / 100][pos % 100] = (step % 2 == 1 ? (*GamerecOfThread)[AIchess] : (*GamerecOfThread)[Playerchess]);
-		//(*GamerecOfThread)[Tempx] = pos / 100; (*GamerecOfThread)[Tempx] = pos % 100;
 		Chess_Util::updateRec(boardOfThread,GamerecOfThread,chessTypeCountOfThread,chessTypeCount_OldOfThread);
+		
 		int newValue = minMaxSearch(a, b, x, step + 1, pos);
 		boardOfThread[pos / 100][pos % 100] = BLANK;
 		
@@ -95,7 +101,6 @@ LL Assigned_Thread::minMaxSearch(int a,int b,int &x,int step,int drop)//参数分别
 				bestValue = newValue;
 				a = qMax(bestValue, a);
 				if (step == 1) x = pos;
-				
 				if (a >= b) break;
 			}
 		}
@@ -109,7 +114,7 @@ LL Assigned_Thread::minMaxSearch(int a,int b,int &x,int step,int drop)//参数分别
 			}
 		}
 	}
-	return (step % 2 == 1 ? a : b);
+	return bestValue;
 }
 //destroy family
 void Assigned_Thread::destroy()
@@ -144,7 +149,7 @@ void Assigned_Thread::destroyFourThree()
 
 LL Assigned_Thread::eval(int res,int now)
 {
-		if (res == 1) return -INFINITY;
+		if (res == 1) return -2*INFINITY;
 		else if (res == 2) return INFINITY;
 		else if (res == 0)
 		{
@@ -154,7 +159,7 @@ LL Assigned_Thread::eval(int res,int now)
 					+ (*chessTypeCountOfThread)[BlackHThree] * Chess_Util::chessTypeValue[BlackHThree]
 					+ (*chessTypeCountOfThread)[BlackTThree] * Chess_Util::chessTypeValue[BlackTThree]
 					+ (*chessTypeCountOfThread)[BlackCThree] * Chess_Util::chessTypeValue[BlackCThree]
-					+ (*chessTypeCountOfThread)[BlackHTwo] * Chess_Util::chessTypeValue[BlackHTwo]) * 3
+					+ (*chessTypeCountOfThread)[BlackHTwo] * Chess_Util::chessTypeValue[BlackHTwo]) * 10
 				+ ((*chessTypeCountOfThread)[WhiteHFour] * Chess_Util::chessTypeValue[WhiteHFour]
 					+ (*chessTypeCountOfThread)[WhiteCFour] * Chess_Util::chessTypeValue[WhiteCFour]
 					+ (*chessTypeCountOfThread)[WhiteHThree] * Chess_Util::chessTypeValue[WhiteHThree]
@@ -173,7 +178,7 @@ LL Assigned_Thread::eval(int res,int now)
 					+ (*chessTypeCountOfThread)[WhiteHThree] * Chess_Util::chessTypeValue[WhiteHThree]
 					+ (*chessTypeCountOfThread)[WhiteTThree] * Chess_Util::chessTypeValue[WhiteTThree]
 					+ (*chessTypeCountOfThread)[WhiteCThree] * Chess_Util::chessTypeValue[WhiteCThree]
-					+ (*chessTypeCountOfThread)[WhiteHTwo] * Chess_Util::chessTypeValue[WhiteHTwo]) * 3;
+					+ (*chessTypeCountOfThread)[WhiteHTwo] * Chess_Util::chessTypeValue[WhiteHTwo] ) * 10;
 		}
 }
 

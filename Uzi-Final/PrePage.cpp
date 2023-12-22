@@ -1,5 +1,6 @@
 #include "PrePage.h"
 #include "Assigned_Game.h"
+#include "Free_Game.h"
 #include "Chess_Util.h"
 PrePage::PrePage(QWidget *parent)
     : QWidget(parent)
@@ -16,7 +17,8 @@ PrePage::PrePage(QWidget *parent)
     connect(ui.Free_Btn, &QPushButton::clicked, this, &PrePage::showInfo);
     connect(ui.Five_N_Box, &QSpinBox::valueChanged,this, &PrePage::showInfo);
     connect(ui.First_Three_Box, &QComboBox::currentIndexChanged, this, &PrePage::showInfo);
-
+    connect(ui.Free_Btn, &QRadioButton::clicked, this, &PrePage::isFree);
+    connect(ui.Assigned_Btn, &QRadioButton::clicked, this, &PrePage::isFree);
 }
 
 PrePage::~PrePage()
@@ -55,9 +57,16 @@ void PrePage::resetInfo()
     ui.Five_N_Box->setValue(2);
     ui.First_Three_Box->setCurrentIndex(0);
 }
+void PrePage::isFree(bool ischecked)
+{
+    ui.First_Three_Box->setEnabled(ischecked);
+    ui.Five_N_Box->setEnabled(ischecked);
+}
 void PrePage::startGame()
 {
     collectInfo();
-    Game* game = new Assigned_Game(GameInfo);
+    Game* game;
+    if(ui.Assigned_Btn->isChecked()) game = new Assigned_Game(GameInfo);
+    else game = new Free_Game(GameInfo);
     game->show();
 }
